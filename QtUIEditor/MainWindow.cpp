@@ -4,6 +4,8 @@
 
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include "PropertyEditor.h"
+#include "D3DViewWidget.h"
 
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
@@ -43,8 +45,8 @@ MainWindow::MainWindow(QWidget *parent)
     , m_pN3Eng(nullptr)
     , m_pCurrentUI(nullptr)
     , m_bIsModified(false)
+    , m_pPropertyEditor(nullptr)
     , m_pHierarchyTree(nullptr)
-    , m_pPropertyList(nullptr)
     , m_pMainSplitter(nullptr)
     , m_pRightSplitter(nullptr)
     , m_pFileToolBar(nullptr)
@@ -105,23 +107,38 @@ void MainWindow::setupUI()
     m_pHierarchyTree->setHeaderLabel("UI Hierarchy");
     m_pHierarchyTree->setMinimumWidth(200);
     
-    // Orta panel - Direct3D Widget (rendering)
-    m_pD3DWidget = qobject_cast<QDirect3D9Widget*>(m_ui->view);
-    if (!m_pD3DWidget)
-    {
-        m_pD3DWidget = new QDirect3D9Widget(m_pMainSplitter);
-    }
+    // Orta panel - Direct3D Widget (rendering + görsel düzenleme)
+    m_pD3DWidget = new D3DViewWidget(m_pMainSplitter);
     m_pD3DWidget->setMinimumSize(640, 480);
     
-    // Sağ panel - Property Editor
+    // Element seçimi signal'ını bağla
+    connect(m_pD3DWidget, &D3DViewWidget::elementSelected,
+            this, [this](CN3UIBase* pElement) {
+                if (m_pPropertyEditor)
+                {
+                    m_pPropertyEditor->setUIElement(pElement);
+                }
+            });
+    
+    connect(m_pD3DWidget, &D3DViewWidget::elementMoved,
+            this, [this](CN3UIBase* pElement) {
+                m_bIsModified = true;
+                updateWindowTitle();
+            });
+    
+    // Sağ panel - Property Editor (GUI tabanlı)
     m_pRightSplitter = new QSplitter(Qt::Vertical, m_pMainSplitter);
     
-    m_pPropertyList = new QListWidget(m_pRightSplitter);
-    m_pPropertyList->setMinimumWidth(250);
+    m_pPropertyEditor = new PropertyEditor(m_pRightSplitter);
+    m_pPropertyEditor->setMinimumWidth(300);
+    
+    connect(m_pPropertyEditor, &PropertyEditor::propertyChanged,
+            this, &MainWindow::onPropertyChanged);
     
     // Splitter'a ekle
     m_pMainSplitter->addWidget(m_pHierarchyTree);
     m_pMainSplitter->addWidget(m_pD3DWidget);
+    m_pRightSplitter->addWidget(m_pPropertyEditor);
     m_pMainSplitter->addWidget(m_pRightSplitter);
     
     // Splitter oranları
@@ -255,6 +272,12 @@ void MainWindow::onRender()
 {
     // UI'yı render et
     renderUI();
+    
+    // Seçili element varsa seçim çerçevesini çiz
+    if (m_pD3DWidget && m_pD3DWidget->getSelectedElement())
+    {
+        // Seçim çerçevesi çizimi D3DViewWidget içinde yapılabilir
+    }
 }
 
 void MainWindow::onActionNew()
@@ -436,14 +459,23 @@ void MainWindow::refreshUIHierarchy()
     
     if (!m_pCurrentUI) return;
     
-    // UI hierarchy'sini tree widget'a ekle
-    // Bu basit bir implementasyon, gerçekte recursive olmalı
-    QTreeWidgetItem* pRootItem = new QTreeWidgetItem(m_pHierarchyTree);
-    pRootItem->setText(0, QString::fromStdString(m_pCurrentUI->GetID()));
-    pRootItem->setData(0, Qt::UserRole, QVariant::fromValue((void*)m_pCurrentUI));
+    m_pHierarchyTree->clear();
     
-    // Child element'leri ekle (örnek - gerçek implementasyon recursive olmalı)
-    // ...
+    // UI hierarchy'sini tree widget'a ekle
+    QTreeWidgetItem* pRootItem = new QTreeWidgetItem(m_pHierarchyTree);
+    QString rootText = QString::fromStdString(m_pCurrentUI->GetID());
+    if (rootText.isEmpty()) rootText = "Root";
+    pRootItem->setText(0, rootText);
+    pRootItem->setData(0, Qt::UserRole, QVariant::fromValue((void*)m_pCurrentUI));
+    pRootItem->setExpanded(true);
+    
+    // D3D Widget'a UI'yı set et
+    if (m_pD3DWidget)
+    {
+        m_pD3DWidget->setUI(m_pCurrentUI);
+    }
+    
+    // TODO: Child element'leri recursive olarak ekle
 }
 
 void MainWindow::onSelectedUIElementChanged(QTreeWidgetItem* item, QTreeWidgetItem* previous)
@@ -462,17 +494,8 @@ void MainWindow::onSelectedUIElementChanged(QTreeWidgetItem* item, QTreeWidgetIt
 
 void MainWindow::updatePropertyEditor(CN3UIBase* pElement)
 {
-    if (!m_pPropertyList || !pElement) return;
-    
-    m_pPropertyList->clear();
-    
-    // Element özelliklerini listele
-    m_pPropertyList->addItem(QString("ID: %1").arg(QString::fromStdString(pElement->GetID())));
-    m_pPropertyList->addItem(QString("Type: %1").arg((int)pElement->UIType()));
-    
-    RECT rc = pElement->GetRegion();
-    m_pPropertyList->addItem(QString("Position: (%1, %2)").arg(rc.left).arg(rc.top));
-    m_pPropertyList->addItem(QString("Size: %1 x %2").arg(rc.right - rc.left).arg(rc.bottom - rc.top));
+    if (!m_pPropertyEditor) return;
+    m_pPropertyEditor->setUIElement(pElement);
 }
 
 void MainWindow::updateWindowTitle()
