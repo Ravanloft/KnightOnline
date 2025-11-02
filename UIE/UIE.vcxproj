@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Tool_Debug|Win32">
@@ -44,12 +44,12 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
-      <AdditionalIncludeDirectories>$(SolutionDir)Client;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Client;$(SolutionDir);$(SolutionDir)deps\QtDirect3D\source;$(Qt5Dir)\include;$(Qt5Dir)\include\QtCore;$(Qt5Dir)\include\QtGui;$(Qt5Dir)\include\QtWidgets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>winmm.lib;imm32.lib;DInput8.lib;N3Base_tool.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>winmm.lib;imm32.lib;DInput8.lib;N3Base_tool.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);$(Qt5Dir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Tool_Release|Win32'">
@@ -61,7 +61,7 @@
       <Optimization>Full</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_N3TOOL;_N3UIE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_N3TOOL;_N3UIE;USE_QT_DIRECT3D;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Midl>
@@ -94,7 +94,7 @@
       <Optimization>Disabled</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_N3TOOL;_N3UIE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_N3TOOL;_N3UIE;USE_QT_DIRECT3D;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Midl>
@@ -135,6 +135,21 @@
     <ClCompile Include="UIE.cpp" />
     <ClCompile Include="UIEDoc.cpp" />
     <ClCompile Include="UIEView.cpp" />
+    <ClCompile Include="QtDirect3DAdapter.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="PropertyEditor.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="D3DViewWidget.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="UIEditorModern.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="UndoCommands.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="UIE.rc" />
@@ -155,6 +170,12 @@
     <ClInclude Include="UIE.h" />
     <ClInclude Include="UIEDoc.h" />
     <ClInclude Include="UIEView.h" />
+    <ClInclude Include="QtDirect3DAdapter.h" />
+    <ClInclude Include="PropertyEditor.h" />
+    <ClInclude Include="D3DViewWidget.h" />
+    <ClInclude Include="UIEditorModern.h" />
+    <ClInclude Include="AdvancedPropertyEditor.h" />
+    <ClInclude Include="UndoCommands.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="res\hand.cur" />
@@ -169,6 +190,17 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="UIEditorModern.ui">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Tool_Debug|Win32'">$(QTDIR)\bin\uic.exe -o "$(IntDir)\ui_UIEditorModern.h" "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Tool_Debug|Win32'">$(IntDir)\ui_UIEditorModern.h;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Tool_Debug|Win32'">Uic UIEditorModern.ui</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Tool_Release|Win32'">$(QTDIR)\bin\uic.exe -o "$(IntDir)\ui_UIEditorModern.h" "%(FullPath)"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Tool_Release|Win32'">$(IntDir)\ui_UIEditorModern.h;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Tool_Release|Win32'">Uic UIEditorModern.ui</Message>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
